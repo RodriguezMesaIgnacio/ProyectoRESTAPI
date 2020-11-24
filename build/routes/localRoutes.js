@@ -289,6 +289,48 @@ class LocalRoutes {
                 }
             }
         });
+        this.editaEncargado = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            const { local } = req.params;
+            const { nombre, apellidos, telefono, fechaNacimiento, sueldo } = req.body;
+            yield database_1.db.conectarBD();
+            const tl = yield Local_1.Locales.findOne({ _nombre: { $eq: local } });
+            if (tl == null) {
+                res.send("No existe local con el nombre dado");
+            }
+            else {
+                let encargado = new Persona_1.Persona(tl._encargado._dni, tl._encargado._nombre, tl._encargado._apellidos, tl._encargado._telefono, tl._encargado._fechaNacimiento, tl._encargado._sueldo);
+                encargado.nombre = nombre;
+                encargado.apellidos = apellidos;
+                encargado.telefono = parseInt(telefono);
+                encargado.fechaNacimiento = new Date(fechaNacimiento);
+                encargado.sueldo = parseInt(sueldo);
+                let empleados = new Array();
+                for (let e of tl._empleados) {
+                    let te = new Persona_1.Persona(e._dni, e._nombre, e._apellidos, e._telefono, e._fechaNacimiento, e._sueldo);
+                    empleados.push(te);
+                }
+                let ordenadores = new Array();
+                for (let o of tl._ordenadores) {
+                    let to = new Ordenador_1.Ordenador(o._nombre, o._precio, o._marca, o._fechaCompra, o._operativo);
+                    to.ultActualizacion = o._ultActualizacion;
+                    ordenadores.push(to);
+                }
+                let l = new Local_1.Local(tl._nombre, tl._direccion, encargado, ordenadores, empleados);
+                yield Local_1.Locales.findOneAndUpdate({ _nombre: { $eq: l.nombre } }, {
+                    _nombre: l.nombre,
+                    _direccion: l.direccion,
+                    _encargado: l.encargado,
+                    _ordenadores: l.ordenadores,
+                    _empleados: l.empleados
+                }, {
+                    new: true,
+                    runValidators: true
+                })
+                    .then((doc) => res.json(doc))
+                    .catch((error) => res.send(error));
+            }
+            yield database_1.db.desconectarBD();
+        });
         this._router = express_1.Router();
     }
     get router() {
@@ -306,6 +348,7 @@ class LocalRoutes {
         this.router.get('/reparar/:local', this.reparar);
         this.router.get('/revisar/:local&:fecha', this.revisar);
         this.router.get('/reparaPC/:local&:pc', this.reparaPc);
+        this.router.post('/editaEncargado/:local', this.editaEncargado);
     }
 }
 const obj = new LocalRoutes();

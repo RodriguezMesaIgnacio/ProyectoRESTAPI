@@ -1,4 +1,4 @@
-import {Request, Response, Router } from 'express'
+import {query, Request, Response, Router } from 'express'
 import { Local, Locales} from '../model/Local'
 import { Persona } from '../model/Persona'
 import { Ordenador } from '../model/Ordenador'
@@ -321,6 +321,53 @@ class LocalRoutes {
         }
     }
 
+    private editaEncargado = async (req: Request, res: Response) => {
+        const { local } = req.params
+        const { nombre, apellidos, telefono, fechaNacimiento, sueldo } = req.body
+        await db.conectarBD()
+        const tl: any = await Locales.findOne({_nombre: {$eq: local}})
+        if (tl==null){
+            res.send("No existe local con el nombre dado")
+        } else {
+            let encargado = new Persona(tl._encargado._dni, tl._encargado._nombre, tl._encargado._apellidos, 
+                tl._encargado._telefono, tl._encargado._fechaNacimiento, tl._encargado._sueldo)
+            encargado.nombre=nombre
+            encargado.apellidos=apellidos
+            encargado.telefono=parseInt(telefono)
+            encargado.fechaNacimiento=new Date(fechaNacimiento)
+            encargado.sueldo=parseInt(sueldo)
+            let empleados : Array<Persona> = new Array()
+            for (let e of tl._empleados){
+                let te = new Persona(e._dni, e._nombre, e._apellidos, e._telefono, e._fechaNacimiento, e._sueldo)
+                empleados.push(te)
+            }
+            let ordenadores : Array<Ordenador> = new Array()
+            for (let o of tl._ordenadores){
+                let to = new Ordenador(o._nombre, o._precio, o._marca, o._fechaCompra, o._operativo)
+                to.ultActualizacion=o._ultActualizacion
+                ordenadores.push(to)
+            }
+            let l = new Local(tl._nombre, tl._direccion, encargado, ordenadores, empleados)
+            await Locales.findOneAndUpdate(
+                {_nombre: {$eq:l.nombre}},
+                {
+                    _nombre:l.nombre,
+                    _direccion:l.direccion,
+                    _encargado:l.encargado,
+                    _ordenadores:l.ordenadores,
+                    _empleados:l.empleados
+                },
+                {
+                    new:true,
+                    runValidators:true  
+                }
+            )
+            .then((doc)=> res.json(doc))
+            .catch((error)=> res.send(error))
+        }
+        await db.desconectarBD()
+    }
+
     misRutas(){
         this._router.get('/', this.getLocales)
         this._router.get('/:local', this.getLocal)
@@ -333,6 +380,7 @@ class LocalRoutes {
         this.router.get('/reparar/:local', this.reparar)
         this.router.get('/revisar/:local&:fecha', this.revisar)
         this.router.get('/reparaPC/:local&:pc', this.reparaPc)
+        this.router.post('/editaEncargado/:local', this.editaEncargado)
     }
 }
 
