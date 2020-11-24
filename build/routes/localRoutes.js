@@ -261,6 +261,34 @@ class LocalRoutes {
             }
             yield database_1.db.desconectarBD();
         });
+        this.reparaPc = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            const { local, pc } = req.params;
+            yield database_1.db.conectarBD();
+            const tl = yield Local_1.Locales.findOne({ _nombre: { $eq: local } });
+            if (tl == null) {
+                res.send("No existe local con el nombre dado");
+            }
+            else {
+                let encargado = new Persona_1.Persona(tl._encargado._dni, tl._encargado._nombre, tl._encargado._apellidos, tl._encargado._telefono, tl._encargado._fechaNacimiento, tl._encargado._sueldo);
+                let empleados = new Array();
+                for (let e of tl._empleados) {
+                    let te = new Persona_1.Persona(e._dni, e._nombre, e._apellidos, e._telefono, e._fechaNacimiento, e._sueldo);
+                    empleados.push(te);
+                }
+                let ordenadores = new Array();
+                for (let o of tl._ordenadores) {
+                    let to = new Ordenador_1.Ordenador(o._nombre, o._precio, o._marca, o._fechaCompra, o._operativo);
+                    to.ultActualizacion = o._ultActualizacion;
+                    ordenadores.push(to);
+                }
+                let l = new Local_1.Local(tl._nombre, tl._direccion, encargado, ordenadores, empleados);
+                for (let o of l.ordenadores) {
+                    if (o.nombre == pc) {
+                        res.send(o.reparar());
+                    }
+                }
+            }
+        });
         this._router = express_1.Router();
     }
     get router() {
@@ -277,6 +305,7 @@ class LocalRoutes {
         this._router.post('/nuevoOrdenador/:local', this.nuevoOrdenador);
         this.router.get('/reparar/:local', this.reparar);
         this.router.get('/revisar/:local&:fecha', this.revisar);
+        this.router.post('/reparaPC/:local&pc', this.reparaPc);
     }
 }
 const obj = new LocalRoutes();

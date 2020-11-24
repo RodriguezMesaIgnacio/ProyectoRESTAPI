@@ -3,8 +3,6 @@ import { Local, Locales} from '../model/Local'
 import { Persona } from '../model/Persona'
 import { Ordenador } from '../model/Ordenador'
 import { db } from '../database/database'
-import { loadavg } from 'os'
-import { RSA_NO_PADDING } from 'constants'
 
 class LocalRoutes {
     private _router: Router
@@ -293,6 +291,35 @@ class LocalRoutes {
         }
         await db.desconectarBD()
     }
+    
+    private reparaPc = async (req: Request, res: Response) => {
+        const { local, pc } = req.params
+        await db.conectarBD()
+        const tl: any = await Locales.findOne({_nombre: {$eq: local}})
+        if (tl==null){
+            res.send("No existe local con el nombre dado")
+        } else {
+            let encargado = new Persona(tl._encargado._dni, tl._encargado._nombre, tl._encargado._apellidos, 
+                tl._encargado._telefono, tl._encargado._fechaNacimiento, tl._encargado._sueldo)
+            let empleados : Array<Persona> = new Array()
+            for (let e of tl._empleados){
+                let te = new Persona(e._dni, e._nombre, e._apellidos, e._telefono, e._fechaNacimiento, e._sueldo)
+                empleados.push(te)
+            }
+            let ordenadores : Array<Ordenador> = new Array()
+            for (let o of tl._ordenadores){
+                let to = new Ordenador(o._nombre, o._precio, o._marca, o._fechaCompra, o._operativo)
+                to.ultActualizacion=o._ultActualizacion
+                ordenadores.push(to)
+            }
+            let l = new Local(tl._nombre, tl._direccion, encargado, ordenadores, empleados)
+            for (let o of l.ordenadores){
+                if (o.nombre == pc){
+                    res.send(o.reparar())
+                }
+            }
+        }
+    }
 
     misRutas(){
         this._router.get('/', this.getLocales)
@@ -305,6 +332,7 @@ class LocalRoutes {
         this._router.post('/nuevoOrdenador/:local', this.nuevoOrdenador)
         this.router.get('/reparar/:local', this.reparar)
         this.router.get('/revisar/:local&:fecha', this.revisar)
+        this.router.post('/reparaPC/:local&pc', this.reparaPc)
     }
 }
 
