@@ -36,10 +36,10 @@ class LocalRoutes {
             yield database_1.db.desconectarBD();
         });
         this.listarLocales = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            let arrayT = new Array();
             yield database_1.db.conectarBD();
             let tl;
             let query;
-            let arrayT = new Array();
             query = yield Local_1.Locales.find({});
             for (tl of query) {
                 let encargado = new Persona_1.Persona(tl._encargado._dni, tl._encargado._nombre, tl._encargado._apellidos, tl._encargado._telefono, tl._encargado._fechaNacimiento, tl._encargado._sueldo);
@@ -55,7 +55,10 @@ class LocalRoutes {
                     ordenadores.push(to);
                 }
                 let l = new Local_1.Local(tl._nombre, tl._direccion, encargado, ordenadores, empleados);
-                const lt = { nombre: l.nombre, info: l.imprimirLocal() };
+                const lt = {
+                    nombre: l.nombre,
+                    info: l.imprimirLocal()
+                };
                 arrayT.push(lt);
             }
             res.json(arrayT);
@@ -331,6 +334,97 @@ class LocalRoutes {
             }
             yield database_1.db.desconectarBD();
         });
+        this.editaEmpleado = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            const { local, empleado } = req.params;
+            const { nombre, apellidos, telefono, fechaNacimiento, sueldo } = req.body;
+            yield database_1.db.conectarBD();
+            const tl = yield Local_1.Locales.findOne({ _nombre: { $eq: local } });
+            if (tl == null) {
+                res.send("No existe local con el nombre dado");
+            }
+            else {
+                let encargado = new Persona_1.Persona(tl._encargado._dni, tl._encargado._nombre, tl._encargado._apellidos, tl._encargado._telefono, tl._encargado._fechaNacimiento, tl._encargado._sueldo);
+                let empleados = new Array();
+                for (let e of tl._empleados) {
+                    let te = new Persona_1.Persona(e._dni, e._nombre, e._apellidos, e._telefono, e._fechaNacimiento, e._sueldo);
+                    empleados.push(te);
+                }
+                let ordenadores = new Array();
+                for (let o of tl._ordenadores) {
+                    let to = new Ordenador_1.Ordenador(o._nombre, o._precio, o._marca, o._fechaCompra, o._operativo);
+                    to.ultActualizacion = o._ultActualizacion;
+                    ordenadores.push(to);
+                }
+                for (let e of empleados) {
+                    if (e.dni == empleado) {
+                        e.nombre = nombre;
+                        e.apellidos = apellidos;
+                        e.telefono = parseInt(telefono);
+                        e.fechaNacimiento = new Date(fechaNacimiento);
+                        e.sueldo = parseInt(telefono);
+                    }
+                }
+                let l = new Local_1.Local(tl._nombre, tl._direccion, encargado, ordenadores, empleados);
+                yield Local_1.Locales.findOneAndUpdate({ _nombre: { $eq: l.nombre } }, {
+                    _nombre: l.nombre,
+                    _direccion: l.direccion,
+                    _encargado: l.encargado,
+                    _ordenadores: l.ordenadores,
+                    _empleados: l.empleados
+                }, {
+                    new: true,
+                    runValidators: true
+                })
+                    .then((doc) => res.json(doc))
+                    .catch((error) => res.send(error));
+            }
+            yield database_1.db.desconectarBD();
+        });
+        this.editaPc = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            const { local, pc } = req.params;
+            const { precio, marca, fechaCompra, operativo } = req.body;
+            yield database_1.db.conectarBD();
+            const tl = yield Local_1.Locales.findOne({ _nombre: { $eq: local } });
+            if (tl == null) {
+                res.send("No existe local con el nombre dado");
+            }
+            else {
+                let encargado = new Persona_1.Persona(tl._encargado._dni, tl._encargado._nombre, tl._encargado._apellidos, tl._encargado._telefono, tl._encargado._fechaNacimiento, tl._encargado._sueldo);
+                let empleados = new Array();
+                for (let e of tl._empleados) {
+                    let te = new Persona_1.Persona(e._dni, e._nombre, e._apellidos, e._telefono, e._fechaNacimiento, e._sueldo);
+                    empleados.push(te);
+                }
+                let ordenadores = new Array();
+                for (let o of tl._ordenadores) {
+                    let to = new Ordenador_1.Ordenador(o._nombre, o._precio, o._marca, o._fechaCompra, o._operativo);
+                    to.ultActualizacion = o._ultActualizacion;
+                    ordenadores.push(to);
+                }
+                for (let o of ordenadores) {
+                    if (o.nombre == pc) {
+                        o.precio = parseInt(precio);
+                        o.marca = marca;
+                        o.fechaCompra = new Date(fechaCompra);
+                        o.operativo = operativo;
+                    }
+                }
+                let l = new Local_1.Local(tl._nombre, tl._direccion, encargado, ordenadores, empleados);
+                yield Local_1.Locales.findOneAndUpdate({ _nombre: { $eq: l.nombre } }, {
+                    _nombre: l.nombre,
+                    _direccion: l.direccion,
+                    _encargado: l.encargado,
+                    _ordenadores: l.ordenadores,
+                    _empleados: l.empleados
+                }, {
+                    new: true,
+                    runValidators: true
+                })
+                    .then((doc) => res.json(doc))
+                    .catch((error) => res.send(error));
+            }
+            yield database_1.db.desconectarBD();
+        });
         this._router = express_1.Router();
     }
     get router() {
@@ -338,7 +432,7 @@ class LocalRoutes {
     }
     misRutas() {
         this._router.get('/', this.getLocales);
-        this._router.get('/:local', this.getLocal);
+        this._router.get('/verLocal/:local', this.getLocal);
         this._router.get('/lista', this.listarLocales);
         this._router.post('/nuevo', this.nuevoLocal);
         this._router.get('/sueldos', this.getSueldos);
@@ -349,6 +443,9 @@ class LocalRoutes {
         this.router.get('/revisar/:local&:fecha', this.revisar);
         this.router.get('/reparaPC/:local&:pc', this.reparaPc);
         this.router.post('/editaEncargado/:local', this.editaEncargado);
+        this.router.post('/editaPC/:local&:pc', this.editaPc);
+        this.router.post('/editaEmpleado/:local&:empleado', this.editaEmpleado);
+        // this.router.get('/')
     }
 }
 const obj = new LocalRoutes();
