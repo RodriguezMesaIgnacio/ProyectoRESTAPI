@@ -473,6 +473,24 @@ class LocalRoutes {
         await db.desconectarBD()
     }
 
+    private borrar = async (req: Request, res: Response) => {
+        const { local } = req.params
+        await db.conectarBD()
+        await Locales.findOneAndDelete(
+            { _nombre: local }, 
+            (err: any, doc) => {
+                if(err) console.log(err)
+                else{
+                    if (doc == null) {
+                        res.send(`No encontrado`)
+                    }else {
+                        res.send('Borrado correcto: '+ doc)
+                    }
+                }
+            })
+        db.desconectarBD()
+    }
+
     misRutas(){
         this._router.get('/', this.getLocales)
         this._router.get('/verLocal/:local', this.getLocal)
@@ -488,7 +506,7 @@ class LocalRoutes {
         this.router.post('/editaEncargado/:local', this.editaEncargado)
         this.router.post('/editaPC/:local&:pc', this.editaPc)
         this.router.post('/editaEmpleado/:local&:empleado', this.editaEmpleado)
-        // this.router.get('/')
+        this.router.get('/borrar/:local', this.borrar)
     }
 }
 

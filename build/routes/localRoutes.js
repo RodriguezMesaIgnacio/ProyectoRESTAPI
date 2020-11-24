@@ -425,6 +425,23 @@ class LocalRoutes {
             }
             yield database_1.db.desconectarBD();
         });
+        this.borrar = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            const { local } = req.params;
+            yield database_1.db.conectarBD();
+            yield Local_1.Locales.findOneAndDelete({ _nombre: local }, (err, doc) => {
+                if (err)
+                    console.log(err);
+                else {
+                    if (doc == null) {
+                        res.send(`No encontrado`);
+                    }
+                    else {
+                        res.send('Borrado correcto: ' + doc);
+                    }
+                }
+            });
+            database_1.db.desconectarBD();
+        });
         this._router = express_1.Router();
     }
     get router() {
@@ -445,7 +462,7 @@ class LocalRoutes {
         this.router.post('/editaEncargado/:local', this.editaEncargado);
         this.router.post('/editaPC/:local&:pc', this.editaPc);
         this.router.post('/editaEmpleado/:local&:empleado', this.editaEmpleado);
-        // this.router.get('/')
+        this.router.get('/borrar/:local', this.borrar);
     }
 }
 const obj = new LocalRoutes();
