@@ -305,7 +305,7 @@ class LocalRoutes {
         this._router.post('/nuevoOrdenador/:local', this.nuevoOrdenador);
         this.router.get('/reparar/:local', this.reparar);
         this.router.get('/revisar/:local&:fecha', this.revisar);
-        this.router.post('/reparaPC/:local&pc', this.reparaPc);
+        this.router.get('/reparaPC/:local&pc', this.reparaPc);
     }
 }
 const obj = new LocalRoutes();
