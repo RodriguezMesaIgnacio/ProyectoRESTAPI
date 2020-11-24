@@ -4,6 +4,7 @@ import morgan from 'morgan'
 import { localRoutes } from './routes/localRoutes'
 import { identificacionRoutes } from './routes/identificacionRoutes'
 
+
 class Server {
     private app: express.Application
     constructor(){
